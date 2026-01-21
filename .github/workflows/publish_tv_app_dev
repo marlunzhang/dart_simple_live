@@ -1,0 +1,82 @@
+name: app-tv-build-action-release
+# 手动触发
+on:
+  workflow_dispatch: # 允许手动触发
+  push:
+    tags:
+      - "v*"
+jobs:
+  build-tv:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    steps:
+      # 签出代码 
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+        
+      # APK 签名设置
+      - name: Download Android keystore
+        id: android_tv_keystore
+        uses: timheuer/base64-to-file@v1.2
+        with:
+          fileName: keystore.jks
+          encodedString: ${{ secrets.TV_KEYSTORE_BASE64 }}
+      - name: Create key.properties
+        run: |
+          echo "storeFile=${{ steps.android_tv_keystore.outputs.filePath }}" > simple_live_tv_app/android/key.properties
+          echo "storePassword=${{ secrets.TV_STORE_PASSWORD }}" >> simple_live_tv_app/android/key.properties
+          echo "keyPassword=${{ secrets.TV_KEY_PASSWORD }}" >> simple_live_tv_app/android/key.properties
+          echo "keyAlias=${{ secrets.TV_KEY_ALIAS }}" >> simple_live_tv_app/android/key.properties
+
+      # 设置 JAVA 环境
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: "17"
+          cache: "gradle"
+    
+      # 设置 Flutter
+      - name: Flutter action
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version-file: simple_live_tv_app/pubspec.yaml
+          cache: true
+
+      # 更新 Flutter 的 packages
+      - name: Restore packages
+        run: |
+          cd simple_live_tv_app
+          flutter pub get
+        
+      # 打包 APK
+      - name: Build APK
+        run: |
+          cd simple_live_tv_app
+          flutter build apk --release --split-per-abi
+    
+      # 上传 APK 至 Artifacts
+      - name: Upload APK to Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android_tv
+          path: |
+            simple_live_tv_app/build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
+            simple_live_tv_app/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+            simple_live_tv_app/build/app/outputs/flutter-apk/app-x86_64-release.apk
+    
+      # 读取版本信息
+      - name: Read version
+        id: version
+        uses: juliangruber/read-file-action@v1
+        with:
+          path: assets/tv_app_version.json
+      - name: Echo version
+        run: echo "${{ fromJson(steps.version.outputs.content).version }}"
+      - name: Echo version content
+        run: echo "${{ fromJson(steps.version.outputs.content).version_desc }}"
+    
+        
+      # 完成
+      - run: echo "🍏 This job's status is ${{ job.status }}."
