@@ -1,4 +1,4 @@
-name: app-tv-build-action
+name: app-tv-build-action-dev
 # 手动触发
 on:
   workflow_dispatch: # 允许手动触发
