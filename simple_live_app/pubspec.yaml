@@ -4,7 +4,7 @@ publish_to: none
 description: "Slive APP"
 environment: 
   sdk: '>=3.0.5 <4.0.0'
-  flutter: 3.41.7
+  flutter: 3.41.9
 
 dependencies: 
   flutter: 
@@ -91,44 +91,44 @@ dependencies:
   media_kit:
     git:
       url: https://github.com/Predidit/media-kit.git
-      ref: f228407de30278da4109bdc090fffedf1986f769
+      ref: 21aacaf9600c4bd00f2a3c57310363bc0cc9597f
       path: ./media_kit
   media_kit_video:
     git:
       url: https://github.com/Predidit/media-kit.git
-      ref: f228407de30278da4109bdc090fffedf1986f769
+      ref: 21aacaf9600c4bd00f2a3c57310363bc0cc9597f
       path: ./media_kit_video
   media_kit_libs_video:
     git:
       url: https://github.com/Predidit/media-kit.git
-      ref: f228407de30278da4109bdc090fffedf1986f769
+      ref: 21aacaf9600c4bd00f2a3c57310363bc0cc9597f
       path: ./libs/universal/media_kit_libs_video
 
 dependency_overrides:
   media_kit_libs_linux:
     git:
       url: https://github.com/Predidit/media-kit.git
-      ref: f228407de30278da4109bdc090fffedf1986f769
+      ref: 21aacaf9600c4bd00f2a3c57310363bc0cc9597f
       path: ./libs/linux/media_kit_libs_linux
   media_kit_libs_ios_video:
     git:
       url: https://github.com/Predidit/media-kit.git
-      ref: f228407de30278da4109bdc090fffedf1986f769
+      ref: 21aacaf9600c4bd00f2a3c57310363bc0cc9597f
       path: ./libs/ios/media_kit_libs_ios_video
   media_kit_libs_android_video:
     git:
       url: https://github.com/Predidit/media-kit.git
-      ref: f228407de30278da4109bdc090fffedf1986f769
+      ref: 21aacaf9600c4bd00f2a3c57310363bc0cc9597f
       path: ./libs/android/media_kit_libs_android_video
   media_kit_libs_windows_video:
     git:
       url: https://github.com/Predidit/media-kit.git
-      ref: f228407de30278da4109bdc090fffedf1986f769
+      ref: 21aacaf9600c4bd00f2a3c57310363bc0cc9597f
       path: ./libs/windows/media_kit_libs_windows_video
   media_kit_libs_macos_video:
     git:
       url: https://github.com/Predidit/media-kit.git
-      ref: f228407de30278da4109bdc090fffedf1986f769
+      ref: 21aacaf9600c4bd00f2a3c57310363bc0cc9597f
       path: ./libs/macos/media_kit_libs_macos_video
 
 dev_dependencies:
