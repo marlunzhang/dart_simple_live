@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:collection/collection.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -75,10 +76,12 @@ class FollowService extends GetxService {
       }
     });
     initTimer();
+    cleanupTombstones();
     super.onInit();
   }
 
-  void updateTagName(FollowUserTag followUserTag, String newTagName) {
+  Future<void> updateTagName(
+      FollowUserTag followUserTag, String newTagName) async {
     final FollowUserTag newTag = followUserTag.copyWith(tag: newTagName);
     updateFollowUserTag(newTag);
     // update item's tag when update tagName
@@ -86,7 +89,7 @@ class FollowService extends GetxService {
       var follow = DBService.instance.followBox.get(i);
       if (follow != null) {
         follow.tag = newTagName;
-        addFollow(follow);
+        await addFollow(follow);
       }
     }
   }
@@ -117,7 +120,7 @@ class FollowService extends GetxService {
       var follow = DBService.instance.followBox.get(i);
       if (follow != null) {
         follow.tag = "全部";
-        FollowService.instance.addFollow(follow);
+        await FollowService.instance.addFollow(follow);
       }
     }
     followTagList.remove(tag);
@@ -139,7 +142,7 @@ class FollowService extends GetxService {
   }
 
   /// 为关注项设置标签（统一逻辑）
-  void setFollowTag(FollowUser item, FollowUserTag targetTag) {
+  Future<void> setFollowTag(FollowUser item, FollowUserTag targetTag) async {
     // 当前标签对象（可能为“全部”且不在 followTagList 中）
     FollowUserTag? currentTag;
     if (item.tag != '全部') {
@@ -175,7 +178,7 @@ class FollowService extends GetxService {
 
     // 更新FollowUser本身
     item.tag = targetTag.tag;
-    addFollow(item);
+    await addFollow(item);
   }
 
   void filterDataByTag(FollowUserTag tag) {
@@ -198,32 +201,67 @@ class FollowService extends GetxService {
     if (toRemove.isNotEmpty) {
       DBService.instance.updateFollowTag(tag);
     }
-    listSortByMethod(curTagFollowList,  AppSettingsController.instance.followSortMethod.value);
+    listSortByMethod(curTagFollowList,
+        AppSettingsController.instance.followSortMethod.value);
   }
 
-  Future<void> updateFollowTagOrder(FollowUserTag oldTag,FollowUserTag newTag) async {
-    await DBService.instance.deleteFollowTag(oldTag.id);
-    await DBService.instance.updateFollowTag(newTag);
-    loadData(updateStatus: false);
+  void updateFollowTagOrder(FollowUserTag oldTag, FollowUserTag newTag) {
+    // 改变先落库再读库最后更新ui，这中间需要同步等待，数据流程糟糕，开发心智负担重
+    // 内存优先：实现外表操作结束后异步落库，多写代码 但逻辑较为简单
+    followTagList.removeWhere((x) => x.id == oldTag.id);
+    followTagList.add(newTag);
+    // hive 以 id排序，额外进行排序操作
+    followTagList.sort((tagA, tagB) => tagA.id.compareTo(tagB.id));
+
+    DBService.instance.deleteFollowTag(oldTag.id);
+    DBService.instance.updateFollowTag(newTag);
   }
 
   // 添加关注
-  void addFollow(FollowUser follow) {
+  Future<void> addFollow(FollowUser follow) async {
     // follow变动过程中romanName统一变化
     String romanName = "";
-    if(follow.remark !=null && follow.remark!.isNotEmpty){
+    if (follow.remark != null && follow.remark!.isNotEmpty) {
       romanName = PinyinHelper.getShortPinyin(follow.romanName!);
-    }else{
+    } else {
       romanName = PinyinHelper.getShortPinyin(follow.userName);
     }
     follow.romanName = romanName.normalize();
-
-    DBService.instance.addFollow(follow);
+    // 重新关注时清除墓碑标记
+    follow.deleted = false;
+    follow.updateTime = 0;
+    // db.add 其实是update会直接更新数据，所以外表也应该实现此功能：有则更，无则添加
+    int index = followList.indexWhere((f) => f.id == follow.id);
+    if (index != -1) {
+      followList[index] = follow;
+    } else {
+      followList.add(follow);
+    }
+    liveListSort(); // 每次数据操作后外表进行业务刷新
+    await DBService.instance.addFollow(follow);
   }
 
-  // 取消关注
+  // 取消关注（墓碑机制）
   Future<void> removeFollowUser(String id) async {
-    await DBService.instance.deleteFollow(id);
+    // 存储在线状态，数据修改应followList外表和followBox内表保持同步
+    // 后续业务逻辑中，将规避直接业务在数据库上操作，落库操作只执行一次
+    // 从而规避业务逻辑直读数据库导致的数据混乱
+    FollowUser follow = followList.firstWhere((x) => x.id == id);
+    followList.removeWhere((x) => x.id == id);
+    // 取消关注同时删除用户自定义tag中的关注id
+    if (follow.tag != "全部") {
+      // 对象引用会直接修改数据无需额外操作
+      var tag = followTagList.firstWhereOrNull((tag) => tag.tag == follow.tag);
+      if (tag != null) {
+        tag.userId.remove(follow.id);
+        await FollowService.instance.updateFollowUserTag(tag);
+      }
+    }
+    liveListSort();
+    // 设置墓碑标记，而非直接删除记录
+    follow.deleted = true;
+    follow.updateTime = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    await DBService.instance.addFollow(follow);
   }
 
   // 判断关注是否存在
@@ -232,14 +270,17 @@ class FollowService extends GetxService {
   }
 
   // 更新关注的历史记录
-  void updateFollowHistory(History history) {
+  Future<void> updateFollowHistory(History history) async {
     var follow =
         followList.where((follow) => follow.id == history.id).firstOrNull;
     if (follow == null) {
       return;
     } else {
+      // sync watch-part between history and follow
+      follow.syncDuration = history.syncDuration;
       follow.watchDuration = history.watchDuration;
-      addFollow(follow);
+      follow.watchDurationSec = history.watchDuration!.toDuration().inSeconds;
+      await addFollow(follow);
     }
     Log.i("已更新当前播放的观看时长：${follow.watchDuration}");
   }
@@ -264,6 +305,7 @@ class FollowService extends GetxService {
   }
 
   Future<void> loadData({bool updateStatus = true, int? cycle}) async {
+    // todo: 此操作只在初始化时调用一次
     var list = DBService.instance.getFollowList();
     getAllTagList();
     if (list.isEmpty) {
@@ -277,7 +319,7 @@ class FollowService extends GetxService {
     if (updateStatus) {
       followList.assignAll(list);
       startUpdateStatus(cycle: cycle);
-    }else{
+    } else {
       _updatedListController.add(0);
     }
   }
@@ -408,13 +450,12 @@ class FollowService extends GetxService {
 
   void filterData() {
     liveListSort();
-    liveList.assignAll(followList.where((x) => x.liveStatus.value == 2));
-    notLiveList.assignAll(followList.where((x) => x.liveStatus.value == 1));
     _updatedListController.add(0);
   }
 
-  void liveListSort(){
-    listSortByMethod(followList, AppSettingsController.instance.followSortMethod.value);
+  void liveListSort() {
+    listSortByMethod(
+        followList, AppSettingsController.instance.followSortMethod.value);
     liveList.assignAll(followList.where((x) => x.liveStatus.value == 2));
     notLiveList.assignAll(followList.where((x) => x.liveStatus.value == 1));
   }
@@ -645,6 +686,7 @@ class FollowService extends GetxService {
   // 2: 已关注，且设置标签，但标签不包含
   // 3: 已关注，且设置标签，但标签不存在
   // 4: 标签重复
+  // 5: webdav同步导致的数据错乱
   // 校对思路，followList是基础数据源，tagList为索引数据，重建数据即可
   // 根据此思路，可以重写文件导入导出以及webdav恢复逻辑
   Future<void> followUserAllDataCheck() async {
@@ -653,8 +695,20 @@ class FollowService extends GetxService {
     final Map<String, List<String>> tagMap = {
       for (var tag in oldTagList) tag.tag: <String>[],
     };
+    // 手动添加罗马音
+    for (FollowUser follow in followUserListTemp) {
+      if (follow.remark != null && follow.remark!.isNotEmpty) {
+        var roman = PinyinHelper.getShortPinyin(follow.remark!).normalize();
+        follow.romanName = roman;
+      } else {
+        follow.romanName =
+            PinyinHelper.getShortPinyin(follow.userName).normalize();
+      }
+      await DBService.instance.addFollow(follow);
+    }
+    Log.i("transfer follow.name to roman is down!");
     for (var follow in followUserListTemp) {
-      if(follow.tag!="全部"){
+      if (follow.tag != "全部") {
         tagMap.putIfAbsent(follow.tag, () => <String>[]).add(follow.id);
       }
     }
@@ -672,7 +726,20 @@ class FollowService extends GetxService {
     }
     await DBService.instance.tagBox.clear();
     await DBService.instance.tagBox.putAll(res);
-    Log.i("Follow-Service: data check down，follows:${followUserListTemp.length}，tags:${tagMap.length}");
+    Log.i(
+        "Follow-Service: data check down，follows:${followUserListTemp.length}，tags:${tagMap.length}");
+  }
+
+  /// 清理墓碑记录：删除 updateTime 超过15天的墓碑
+  Future<void> cleanupTombstones() async {
+    // 墓碑保留15天 = 15 * 24 * 60 * 60 秒
+    const int tombstoneTTL = 15 * 24 * 60 * 60;
+    final beforeTimestamp =
+        (DateTime.now().millisecondsSinceEpoch ~/ 1000) - tombstoneTTL;
+    final count = await DBService.instance.cleanupTombstones(beforeTimestamp);
+    if (count > 0) {
+      Log.i("Follow-Service: cleaned $count tombstone records");
+    }
   }
 
   @override

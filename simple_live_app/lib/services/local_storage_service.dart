@@ -1,5 +1,5 @@
 import 'package:get/get.dart';
-import 'package:hive/hive.dart';
+import 'package:hive_ce/hive_ce.dart';
 import 'package:simple_live_app/app/log.dart';
 
 class LocalStorageService extends GetxService {
@@ -212,6 +212,12 @@ class LocalStorageService extends GetxService {
 
   /// 数据库版本
   static const String kHiveDbVer = "kHiveDbVer";
+
+  /// 隐藏不在线关注
+  static const String kHideOfflineFollow = "HideOfflineFollow";
+
+  /// 虎牙自定义 HYSDK_UA
+  static const String kHuyaSdkUa = "HuyaSdkUa";
 
   late Box settingsBox;
   late Box<String> shieldBox;
