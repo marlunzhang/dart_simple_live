@@ -5,7 +5,12 @@ on:
   push:
     branches:
       - 'dev'
-
+      
+# If previous workflow is still running, we push again, we will cancel the previous workflow
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+  
 jobs:
   build-tv:
     runs-on: macos-latest
