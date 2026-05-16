@@ -304,6 +304,7 @@ mixin PlayerSystemMixin on PlayerMixin, PlayerStateMixin, PlayerDanmakuMixin {
         setLandscapeOrientation();
       }
     } else {
+      // todo: animation isn't smooth...
       bool isMaximized = await windowManager.isMaximized();
       if (isMaximized) {
         await windowManager.setFullScreen(true);
