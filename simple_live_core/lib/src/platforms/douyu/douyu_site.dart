@@ -311,47 +311,6 @@ class DouyuSite implements LiveSite {
         !roomInfo["room_name"].startsWith("【回放】");
   }
 
-  // Future<String> getPlayArgs(String html, String rid) async {
-  //   //取加密的js
-  //   html = RegExp(
-  //               r"(vdwdae325w_64we[\s\S]*function ub98484234[\s\S]*?)function",
-  //               multiLine: true)
-  //           .firstMatch(html)
-  //           ?.group(1) ??
-  //       "";
-  //   // 防空
-  //   if (html == "") {
-  //     return "";
-  //   }
-  //   //去掉eval
-  //   html = html.replaceAll(RegExp(r"eval.*?;}"), "strc;}");
-  //
-  //   try {
-  //     var did = '10000000000000000000000000001501';
-  //     JsEngine.init();
-  //     var jsEvalResult = JsEngine.evaluate("$html;ub98484234();");
-  //     var res = jsEvalResult.toString();
-  //     String t10 = (DateTime.now().millisecondsSinceEpoch ~/ 1000).toString();
-  //     RegExp vReg = RegExp(r'v=(\d+)');
-  //     Match? vMatch = vReg.firstMatch(res);
-  //     String? v = vMatch?.group(1);
-  //     String rb =
-  //         md5.convert(utf8.encode(rid + did + t10 + (v ?? ""))).toString();
-  //     String jsSign = res
-  //         .replaceAll(RegExp(r'return rt;}\);?'), 'return rt;}')
-  //         .replaceAll('(function (', 'function sign(')
-  //         .replaceAll('CryptoJS.MD5(cb).toString()', '"$rb"');
-  //     var params = JsEngine.evaluate("$jsSign;sign($rid,'$did',$t10);");
-  //     return params.toString();
-  //   } catch (e) {
-  //     CoreLog.error(e);
-  //     return "";
-  //   } finally {
-  //     JsEngine.dispose();
-  //   }
-  //   // 自部署：https://github.com/SlotSun/simple_live_api
-  // }
-
   int parseHotNum(String hn) {
     try {
       var num = double.parse(hn.replaceAll("万", ""));
