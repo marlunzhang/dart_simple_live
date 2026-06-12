@@ -100,6 +100,7 @@ class FollowUserController extends BasePageController<FollowUser> {
     }
   }
 
+  // 数据清洗：不关心中间 data_flow，最终由filterData决定显示数据
   void filterData() {
     bool hideOffline = AppSettingsController.instance.hideOfflineFollow.value;
 
@@ -305,6 +306,7 @@ class FollowUserController extends BasePageController<FollowUser> {
   @override
   void onClose() {
     onUpdatedIndexedStream?.cancel();
+    onUpdatedListStream?.cancel();
     super.onClose();
   }
 }
