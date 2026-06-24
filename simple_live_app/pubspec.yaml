@@ -1,5 +1,5 @@
 name: simple_live_app
-version: 1.8.8+10808
+version: 1.8.9+10809
 publish_to: none
 description: "Slive APP"
 environment: 
@@ -42,7 +42,7 @@ dependencies:
   # ffi
   rust_lib_simple_live_app:
     path: rust_builder
-  flutter_rust_bridge: 2.11.1
+  flutter_rust_bridge: 2.12.0
 
   # Widget
   flutter_staggered_grid_view: ^0.7.0 # 瀑布流 / GridView
@@ -91,44 +91,44 @@ dependencies:
   media_kit:
     git:
       url: https://github.com/Predidit/media-kit.git
-      ref: 21aacaf9600c4bd00f2a3c57310363bc0cc9597f
+      ref: a7d4a070fb4b66cf794893a88a1686156daf20be
       path: ./media_kit
   media_kit_video:
     git:
       url: https://github.com/Predidit/media-kit.git
-      ref: 21aacaf9600c4bd00f2a3c57310363bc0cc9597f
+      ref: a7d4a070fb4b66cf794893a88a1686156daf20be
       path: ./media_kit_video
   media_kit_libs_video:
     git:
       url: https://github.com/Predidit/media-kit.git
-      ref: 21aacaf9600c4bd00f2a3c57310363bc0cc9597f
+      ref: a7d4a070fb4b66cf794893a88a1686156daf20be
       path: ./libs/universal/media_kit_libs_video
 
 dependency_overrides:
   media_kit_libs_linux:
     git:
       url: https://github.com/Predidit/media-kit.git
-      ref: 21aacaf9600c4bd00f2a3c57310363bc0cc9597f
+      ref: a7d4a070fb4b66cf794893a88a1686156daf20be
       path: ./libs/linux/media_kit_libs_linux
   media_kit_libs_ios_video:
     git:
       url: https://github.com/Predidit/media-kit.git
-      ref: 21aacaf9600c4bd00f2a3c57310363bc0cc9597f
+      ref: a7d4a070fb4b66cf794893a88a1686156daf20be
       path: ./libs/ios/media_kit_libs_ios_video
   media_kit_libs_android_video:
     git:
       url: https://github.com/Predidit/media-kit.git
-      ref: 21aacaf9600c4bd00f2a3c57310363bc0cc9597f
+      ref: a7d4a070fb4b66cf794893a88a1686156daf20be
       path: ./libs/android/media_kit_libs_android_video
   media_kit_libs_windows_video:
     git:
       url: https://github.com/Predidit/media-kit.git
-      ref: 21aacaf9600c4bd00f2a3c57310363bc0cc9597f
+      ref: a7d4a070fb4b66cf794893a88a1686156daf20be
       path: ./libs/windows/media_kit_libs_windows_video
   media_kit_libs_macos_video:
     git:
       url: https://github.com/Predidit/media-kit.git
-      ref: 21aacaf9600c4bd00f2a3c57310363bc0cc9597f
+      ref: a7d4a070fb4b66cf794893a88a1686156daf20be
       path: ./libs/macos/media_kit_libs_macos_video
 
 dev_dependencies:

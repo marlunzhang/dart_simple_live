@@ -143,7 +143,6 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
       useFrequencyControl:
           AppSettingsController.instance.danmuFrequencyControl.value,
       maxFrequency: AppSettingsController.instance.danmuMaxFrequency.value,
-      adaptiveWindow: false,
     );
     danmakuTimer = Timer.periodic(
       const Duration(milliseconds: 500),
@@ -633,7 +632,9 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
         face: detail.value?.userAvatar ?? "",
         addTime: DateTime.now(),
         watchDuration: historyDuration,
-      )..liveStatus.value = liveStatus.value ? 2 : 1,
+      )
+        ..liveStatus.value = liveStatus.value ? 2 : 1
+        ..cover.value = detail.value?.cover ?? "",
     );
     followed.value = true;
     EventBus.instance.emit(Constant.kUpdateFollow, id);

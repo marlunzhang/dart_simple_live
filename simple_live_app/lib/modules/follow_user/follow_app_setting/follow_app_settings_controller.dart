@@ -38,6 +38,11 @@ class FollowAppSettingsController extends BaseController {
     EventBus.instance.emit(Constant.kUpdateFollow, 0);
   }
 
+  // 修改隐藏快速取关按钮
+  void setRemoveFollowButton(bool hideFollowCardRemoveButton) {
+    appC.setHideRemoveFollowButton(hideFollowCardRemoveButton);
+  }
+
   // 标签管理
   void updateTagList() {
     userTagList.assignAll(FollowService.instance.followTagList);
